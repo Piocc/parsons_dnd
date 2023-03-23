@@ -17,19 +17,26 @@
 
         const useButton = true;
 
-        function initialize() {
-            var code = "\
-            from pytamaro.it import *\sep\
-            rettangolo_orizzontale = rettangolo(120, 40, bianco)<br/>\
-            rettangolo_verticale = rettangolo(40, 120, bianco)<br/>\
-            quadrato_rosso = rettangolo(200, 200, rosso)\sep\
-            croce = sovrapponi(rettangolo_orizzontale, rettangolo_verticale)\sep\
-            bandiera = sovrapponi(croce, quadrato_rosso)\sep\
-            visualizza_grafica(bandiera)";
+        const code_title = "Bandiera Svizzera";
 
-            var disruptors = "\
-            croce = sovrapponi(quadrato_rosso, rettangolo_verticale)\sep\
-            bandiera = sovrapponi(quadrato_rosso, croce)";
+        const code = `
+            from pytamaro.it import *\sep
+            rettangolo_orizzontale = rettangolo(120, 40, bianco)<br/>
+            rettangolo_verticale = rettangolo(40, 120, bianco)<br/>
+            quadrato_rosso = rettangolo(200, 200, rosso)\sep
+            croce = sovrapponi(rettangolo_orizzontale, rettangolo_verticale)\sep
+            bandiera = sovrapponi(croce, quadrato_rosso)\sep
+            visualizza_grafica(bandiera)
+        `;
+
+        const disruptors = `
+            croce = sovrapponi(quadrato_rosso, rettangolo_verticale)\sep
+            bandiera = sovrapponi(quadrato_rosso, croce)
+        `;
+
+        function initialize() {
+
+            document.getElementById('code-header').innerText = code_title;
 
             importCode(code, disruptors);
 
@@ -59,20 +66,7 @@
 
         // touch
         function touchStart(ev) {
-            if (happenedInsideList(ev))
-                ev.preventDefault();
-        }
-
-        function happenedInsideList(ev) {
-            element = ev.target;
-            while (element.tagName.toLowerCase() != 'body') {
-                if (element.tagName.toLowerCase() == 'ul') {
-                    ev.preventDefault();
-                    return true;
-                }
-                element = element.parentElement;
-            }
-            return false;
+            ev.preventDefault();
         }
 
         function touchDrop(ev) {
@@ -127,8 +121,8 @@
         }
 
         function importCode(code, disruptors) {
-            var code_elements = listElementsFromCode(code, true);
-            var disruptor_elements = listElementsFromCode(disruptors, false);
+            var code_elements = listElementsFromCode(code, false);
+            var disruptor_elements = listElementsFromCode(disruptors, true);
 
             var sourceList = document.getElementById("source-list");
             var list_elements = shuffleArray(code_elements.concat(disruptor_elements));
@@ -137,17 +131,17 @@
                 sourceList.appendChild(list_element)
             });
 
-            function listElementsFromCode(code, useIndex) {
+            function listElementsFromCode(code, isDisruptor) {
                 var trimmed_code = code.trim();
                 var code_lines = trimmed_code.split("\sep").map((line) => { return line.trim() });
-                var code_elements = code_lines.map((code_line, index) => { return createListElement(useIndex ? index : -1, code_line) });
+                var code_elements = code_lines.map((code_line, index) => { return createListElement(index, code_line, isDisruptor) });
 
                 return code_elements
             }
 
-            function createListElement(index, code_line) {
-                var id = "el-" + (index + 1);
-                var pos = (index + 1).toString();
+            function createListElement(index, code_line, isDisruptor) {
+                var id = (isDisruptor ? "dis-" : "el-") + (index + 1);
+                var pos = isDisruptor ? 0 : (index + 1).toString();
                 var list_element = document.createElement("li");
                 list_element.setAttribute("id", id);
                 list_element.setAttribute("pos", pos);
@@ -184,9 +178,9 @@
 </head>
 
 <body onload="initialize()">
-    <div class="container py-3">
+    <div class="container py-1">
         <div class="text-center">
-            <h1 class="display-4 pb-3 pt-5">Bandiera svizzera
+            <h1 id="code-header" class="display-6">
             </h1>
         </div>
     </div>
@@ -195,7 +189,6 @@
             <div class="col">
                 <ul id="source-list" class="list-group border" style="min-height: 10cm;" ondrop="drop(event)"
                     ondragover="allowDrop(event)">
-
                 </ul>
             </div>
             <div class="col">
