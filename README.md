@@ -2,7 +2,7 @@
 
 Single-page drag & drop implementation of a Parsons Problem.
 
-## Features :##
+## Features: ##
 1. Touch events support. Works on touch screens on top of normal cursor drag n drop.
 2. Toggle between instant feedback and button verification.
 ----
