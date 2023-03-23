@@ -1,0 +1,215 @@
+<html>
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
+    <script>
+
+        const listItemClasses = {
+            base: "list-group-item m-1 border",
+            correct: "list-group-item-success",
+            wrong_position: "list-group-item-warning",
+            disruptor: "list-group-item-danger"
+        }
+
+        const useButton = true;
+
+        function initialize() {
+            var code = "\
+            from pytamaro.it import *\sep\
+            rettangolo_orizzontale = rettangolo(120, 40, bianco)<br/>\
+            rettangolo_verticale = rettangolo(40, 120, bianco)<br/>\
+            quadrato_rosso = rettangolo(200, 200, rosso)\sep\
+            croce = sovrapponi(rettangolo_orizzontale, rettangolo_verticale)\sep\
+            bandiera = sovrapponi(croce, quadrato_rosso)\sep\
+            visualizza_grafica(bandiera)";
+
+            var disruptors = "\
+            croce = sovrapponi(quadrato_rosso, rettangolo_verticale)\sep\
+            bandiera = sovrapponi(quadrato_rosso, croce)";
+
+            importCode(code, disruptors);
+
+            if (!useButton) {
+                buttonContainer = document.getElementById("button-container");
+                buttonContainer.classList.add("invisible");
+            }
+
+        }
+
+        // drag & drop
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            var dragged_element = document.getElementById(data);
+            insertElement(dragged_element, ev.target);
+            updateListElements();
+        }
+
+        // touch
+        function touchStart(ev) {
+            if (happenedInsideList(ev))
+                ev.preventDefault();
+        }
+
+        function happenedInsideList(ev) {
+            element = ev.target;
+            while (element.tagName.toLowerCase() != 'body') {
+                if (element.tagName.toLowerCase() == 'ul') {
+                    ev.preventDefault();
+                    return true;
+                }
+                element = element.parentElement;
+            }
+            return false;
+        }
+
+        function touchDrop(ev) {
+            ev.preventDefault();
+            if (ev.changedTouches.length < 1)
+                return;
+
+            var touches = ev.changedTouches[0];
+            var target = document.elementFromPoint(touches.pageX, touches.pageY);
+            var dragged_element = touches.target;
+            insertElement(dragged_element, target);
+            updateListElements();
+        }
+
+        // shared
+        function insertElement(dragged_element, target) {
+            if (!['li', 'ul'].includes(target.nodeName.toLowerCase())) {
+                return;
+            }
+            if (target.nodeName.toLowerCase() == "li") {
+                var ul_element = target.parentElement;
+                ul_element.insertBefore(dragged_element, target);
+            } else {
+                target.appendChild(dragged_element);
+            }
+        }
+
+        function updateListElements(buttonClick = false) {
+
+            // source elements
+            var source_UL = document.getElementById("source-list");
+            Array.from(source_UL.children).forEach(function (list_element) {
+                list_element.className = listItemClasses.base
+            });
+
+            // drop elements
+            if (useButton & !buttonClick)
+                return;
+
+            var drop_UL = document.getElementById("drop-list");
+            Array.from(drop_UL.children).forEach(function (list_element, index) {
+                pos = list_element.getAttribute("pos");
+                list_element.className = listItemClasses.base;
+                if (pos == 0) {
+                    list_element.classList.add(listItemClasses.disruptor);
+                } else if (pos == index + 1) {
+                    list_element.classList.add(listItemClasses.correct);
+                } else {
+                    list_element.classList.add(listItemClasses.wrong_position);
+                }
+            });
+        }
+
+        function importCode(code, disruptors) {
+            var code_elements = listElementsFromCode(code, true);
+            var disruptor_elements = listElementsFromCode(disruptors, false);
+
+            var sourceList = document.getElementById("source-list");
+            var list_elements = shuffleArray(code_elements.concat(disruptor_elements));
+
+            list_elements.forEach((list_element) => {
+                sourceList.appendChild(list_element)
+            });
+
+            function listElementsFromCode(code, useIndex) {
+                var trimmed_code = code.trim();
+                var code_lines = trimmed_code.split("\sep").map((line) => { return line.trim() });
+                var code_elements = code_lines.map((code_line, index) => { return createListElement(useIndex ? index : -1, code_line) });
+
+                return code_elements
+            }
+
+            function createListElement(index, code_line) {
+                var id = "el-" + (index + 1);
+                var pos = (index + 1).toString();
+                var list_element = document.createElement("li");
+                list_element.setAttribute("id", id);
+                list_element.setAttribute("pos", pos);
+                list_element.innerHTML = code_line;
+                enableListElement(list_element);
+
+                return list_element;
+            }
+        }
+
+        function enableListElement(element) {
+            element.draggable = true;
+            element.className = listItemClasses.base;
+            element.addEventListener('dragstart', drag);
+            element.addEventListener('touchstart', touchStart);
+            element.addEventListener('touchend', touchDrop)
+        }
+
+        function shuffleArray(array) {
+            for (var i = array.length - 1; i > 0; i--) {
+
+                // Generate random number 
+                var j = Math.floor(Math.random() * (i + 1));
+
+                var temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+
+            return array;
+        }
+
+    </script>
+</head>
+
+<body onload="initialize()">
+    <div class="container py-3">
+        <div class="text-center">
+            <h1 class="display-4 pb-3 pt-5">Bandiera svizzera
+            </h1>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <ul id="source-list" class="list-group border" style="min-height: 10cm;" ondrop="drop(event)"
+                    ondragover="allowDrop(event)">
+
+                </ul>
+            </div>
+            <div class="col">
+                <ul id="drop-list" class="list-group border" style="min-height: 10cm;" ondrop="drop(event)"
+                    ondragover="allowDrop(event)">
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="button-container" class="container container-fluid py-3 position-relative">
+        <div class="position-absolute top-50 start-50 translate-middle-x">
+            <button type="button" class="btn btn-primary btn-large" onclick="updateListElements(true)">Verifica</button>
+        </div>
+    </div>
+</body>
+
+</html>
